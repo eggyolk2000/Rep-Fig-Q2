@@ -1,0 +1,193 @@
+---
+title: "RepFigAssignment"
+output: html_document
+date: "2024-12-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Loading packages required
+library(here)
+library(tidyverse)
+library(palmerpenguins)
+library(janitor)
+library(ggplot2)
+library(ragg)
+library(svglite)
+library(car)
+library(ggpubr)
+
+## QUESTION 01: Data Visualisation for Science Communication
+
+*Create a figure using the Palmer Penguin dataset that is correct but badly communicates the data. **Do not make a boxplot**.*
+
+*Use the following references to guide you:*
+
+-   [*https://www.nature.com/articles/533452a*](https://www.nature.com/articles/533452a){.uri}
+-   [*https://elifesciences.org/articles/16800*](https://elifesciences.org/articles/16800){.uri}
+
+*Note: Focus on visual elements rather than writing misleading text on it.*
+
+### a) Provide your figure here:
+
+```{r bad figure code, echo=FALSE}
+
+
+```
+
+### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
+
+*Include references.*
+
+------------------------------------------------------------------------
+
+## QUESTION 2: Data Pipeline
+
+*Write a data analysis pipeline in your .rmd RMarkdown file. You should be aiming to write a clear explanation of the steps, the figures visible, as well as clear code.*
+
+------------------------------------------------------------------------
+
+### Introduction
+
+```{r Data Exploration}
+#To begin, I will clean the raw penguin dataset to avoid any issues in the code.
+head(penguins_raw)
+#Saving a copy of the raw dataset
+write_csv(penguins_raw, here("data", "penguins_raw.csv"))
+#Cleaning the data - removing columns and cleaning names in a new object to avoid overwriting
+colnames(penguins_raw)
+penguins_clean <- penguins_raw %>%
+  select(-Comments) %>%
+  select(-starts_with("Delta")) %>%
+  clean_names() %>%
+  remove_empty(c("rows", "cols"))
+colnames(penguins_clean)
+write_csv(penguins_clean, here("data", "penguins_clean.csv"))
+
+#Creating an exploratory figure to show the relationship between body mass and culmen length
+#This figure allows me to show the raw data and any apparent shape/relationship, or anomalies
+#I have chosen a scatter plot to represent the data since it involves two continuous, numerical variables
+(culmenmass_scatter <- ggplot(
+  data = penguins_clean, 
+  aes(x = culmen_depth_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species), stat = 'identity') +
+    labs(x = "Culmen depth in mm", y = "Body mass in g") +
+    theme_bw())
+
+#Saving the figure
+agg_png("figures/culmenmass_scatter.png", 
+        width = 20, 
+        height = 20, 
+        units = "cm", 
+        res = 300, 
+        scaling = 1)
+print(culmenmass_scatter)
+dev.off()
+
+#The exploratory figure created above shows that for all three penguin species observed, body mass appears to increase as culmen depth increases. It also shows that while a fairly similar relationship is seen between these characteristics for Adelie and Chinstrap penguins, Gentoo penguins have a typically higher body mass but shorter culmen depth than them. To avoid confusion, I will focus only on Adelie and Chinstrap penguins.
+
+#Subsetting the data to exclude Gentoo penguins 
+culmenmass <- penguins_clean %>%
+  select(culmen_depth_mm, body_mass_g, species) %>%
+  drop_na()
+head(culmenmass)
+culmenmass_subset <- filter(culmenmass, species %in% c("Chinstrap penguin (Pygoscelis antarctica)", "Adelie Penguin (Pygoscelis adeliae)"))
+
+#Creating another exploratory figure for only Adelie and Chinstrap penguins
+(subset_scatter <- ggplot(
+  data = culmenmass_subset, 
+  aes(x = culmen_depth_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species), stat = 'identity') +
+    labs(x = "Culmen depth in mm", y = "Body mass in g") +
+    theme_bw())
+#Saving this figure
+agg_png("figures/subset_scatter.png", 
+        width = 20, 
+        height = 20, 
+        units = "cm", 
+        res = 300, 
+        scaling = 1)
+print(subset_scatter)
+dev.off()
+```
+
+### Hypothesis
+#Null hypothesis: There is no significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins
+#Alternate hypothesis: There is a significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins
+
+### Statistical Methods
+
+```{r Statistics}
+
+#My alternate hypothesis posits a correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Therefore, calculating the Pearson correlation coefficient seems like an appropriate statistical method.
+#Checking the assumption of normality for the continuous variables using Q-Q plots
+qqPlot(culmenmass_subset$culmen_depth_mm)
+qqPlot(culmenmass_subset$body_mass_g)
+#The plots show both variables appear to satisfy the assumption of normality, so the Pearson correlation coefficient is appropriate.
+
+#Calculating the Pearson correlation coefficient
+masscul_correlation <- cor.test(culmenmass_subset$body_mass_g, culmenmass_subset$culmen_depth_mm, method = 'pearson')
+#Checking the Pearson correlation coefficient for significance against the null hypothesis that the coefficient is not significantly different from zero
+masscul_correlation
+
+```
+
+### Results & Discussion
+
+```{r Plotting Results}
+#The Pearson correlation coefficient calculated was 0.5832418. This indicates a positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins of medium/high strength.
+#The p-value returned by the test was much smaller than 0.05. There is sufficient evidence that the correlation coefficient is not equal to zero. The null hypothesis that there is no significant correlation between body mass and culmen depth can therefore be rejected. We can conclude that there is a significant, positive relationship between body mass and culmen depth for Adelie and Chinstrap penguins.
+
+#Creating a results figure
+(culmass_result <- ggscatter(culmenmass_subset, x = "culmen_depth_mm", y = "body_mass_g", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Culmen depth in mm", ylab = "Body mass in g") +
+   geom_point(aes(color = species)))
+#Saving the figure
+agg_png("figures/culmass_result.png", 
+        width = 30, 
+        height = 20, 
+        units = "cm", 
+        res = 300, 
+        scaling = 1)
+print(culmass_result)
+dev.off()
+```
+
+### Conclusion
+#In conclusion, I have demonstrated that there is a significant, medium to strong positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Although the initial exploratory figure also appeared to show a relationship between these two variables for Gentoo penguins, the data for this species deviated from the other two and may have confused any statistical tests including all three species, so Gentoo penguins were excluded from the analysis. Calculating the Pearson's correlation coefficient and showing it was significantly different from zero indicated the positive and significant nature of the correlation. This result allowed me to reject the null hypothesis that there was no significant correlation between body mass and culmen length for Adelie and Chinstrap penguins. The final results figure produced demonstrates this conclusion, showing the results of the correlation test and the relationship between body mass and culmen length for these species.
+------------------------------------------------------------------------
+
+## QUESTION 3: Open Science
+
+### a) GitHub
+
+*Upload your RProject you created for **Question 2** and any files and subfolders used to GitHub. Do not include any identifiers such as your name. Make sure your GitHub repo is public.*
+
+*GitHub link:*
+
+*You will be marked on your repo organisation and readability.*
+
+### b) Share your repo with a partner, download, and try to run their data pipeline.
+
+*Partner's GitHub link:*
+
+*You **must** provide this so I can verify there is no plagiarism between you and your partner.*
+
+### c) Reflect on your experience running their code. (300-500 words)
+
+-   *What elements of your partner's code helped you to understand their data pipeline?*
+
+-   *Did it run? Did you need to fix anything?*
+
+-   *What suggestions would you make for improving their code to make it more understandable or reproducible, and why?*
+
+-   *If you needed to alter your partner's figure using their code, do you think that would be easy or difficult, and why?*
+
+### d) Reflect on your own code based on your experience with your partner's code and their review of yours. (300-500 words)
+
+-   *What improvements did they suggest, and do you agree?*
+
+-   *What did you learn about writing code for other people?*
