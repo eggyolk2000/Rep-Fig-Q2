@@ -6,7 +6,6 @@ date: "2024-12-05"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 #Loading packages required
 library(here)
 library(tidyverse)
@@ -16,7 +15,8 @@ library(ggplot2)
 library(ragg)
 library(svglite)
 library(car)
-library(ggpubr)
+library(ggpubr) 
+```
 
 ## QUESTION 01: Data Visualisation for Science Communication
 
