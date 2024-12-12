@@ -172,6 +172,7 @@ dev.off()
 ### Conclusion
 
 In conclusion, I have demonstrated that there is a significant, medium to strong positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Although the initial exploratory figure also appeared to show a relationship between these two variables for Gentoo penguins, the data for this species deviated from the other two and may have confused any statistical tests including all three species, so Gentoo penguins were excluded from the analysis. Calculating the Pearson's correlation coefficient and showing it was significantly different from zero indicated the positive and significant nature of the correlation. This result allowed me to reject the null hypothesis that there was no significant correlation between body mass and culmen length for Adelie and Chinstrap penguins. The final results figure produced demonstrates this conclusion, showing the results of the correlation test and the relationship between body mass and culmen length for these species.
+
 ------------------------------------------------------------------------
 
 ## QUESTION 3: Open Science
