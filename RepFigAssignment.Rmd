@@ -1,6 +1,7 @@
 ---
 title: "RepFigAssignment"
-output: pdf_document 
+output:
+  pdf_document: default
 date: "2024-12-05"
 ---
 
