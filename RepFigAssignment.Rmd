@@ -1,6 +1,7 @@
 ---
 title: "RepFigAssignment"
 output:
+  html_document: default
   pdf_document: default
 date: "2024-12-05"
 ---
@@ -16,8 +17,10 @@ library(ggplot2)
 library(ragg)
 library(svglite)
 library(car)
-library(ggpubr) 
+library(ggpubr)
+library(tinytex)
 ```
+
 
 ## QUESTION 01: Data Visualisation for Science Communication
 
@@ -33,13 +36,16 @@ library(ggpubr)
 ### a) Provide your figure here:
 
 ```{r bad figure code, echo=FALSE}
-
+(badplot <- ggplot(data = penguins_raw, aes(x = Island)) +
+                     geom_jitter(aes(color = Sex), stat = 'count') +
+   labs(x = "Island", y = "Number of penguins") + 
+   theme(legend.position = "none"))
 
 ```
 
 ### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
 
-*Include references.*
+The figure above poorly communicates the data. It demonstrates the number of penguins found in each of the three different islands observed. However, there is a great lack of information in the graph. Results are colour-coded according to the sex of the individual, but there is no legend included to explain this and show which colour represents which sex. The dataset has not been cleaned appropriately so 'NA' values are included where sex was not recorded for an individual. It is also not shown that the grey points indicate these NA values. It may be difficult to make out the grey points against the grey background; in general, the point size is small so could be difficult to see at other scales (Turnbull & West, 2023). Other pertinent information such as the different species of penguins recorded is not shown. Moreover, the figure is not exactly reproducible, which could cause issues with simple verification processes and repeats (Baker, 2016). The function geom_jitter() has been used, giving each point a random x-value, and no seed value has been defined, so the graph will change when the figure is reproduced. This may suggest to a reader that the x-value of the points has some meaning, when in reality only differences in the y-value (count number) are being displayed. In some cases, this can make it unclear which island a point is representing. Differences in the distance between each point's x-value for a given island also makes it more difficult for a reader to compare the difference in male/female numbers for each island. The scale of the y-axis is too large to accurately reflect the small differences in count number between male and female individuals. A bar graph may have shown these differences more clearly. 
 
 ------------------------------------------------------------------------
 
@@ -51,7 +57,7 @@ library(ggpubr)
 
 ### Introduction
 
-```{r Data Exploration}
+```{r clean data, results='hide'}
 #To begin, I will clean the raw penguin dataset to avoid any issues in the code.
 head(penguins_raw)
 #Saving a copy of the raw dataset
@@ -65,10 +71,13 @@ penguins_clean <- penguins_raw %>%
   remove_empty(c("rows", "cols"))
 colnames(penguins_clean)
 write_csv(penguins_clean, here("data", "penguins_clean.csv"))
+```
 
-#Creating an exploratory figure to show the relationship between body mass and culmen length
-#This figure allows me to show the raw data and any apparent shape/relationship, or anomalies
-#I have chosen a scatter plot to represent the data since it involves two continuous, numerical variables
+### Creating an exploratory figure to show the relationship between body mass and culmen length
+
+This figure allows me to show the raw data and any apparent shape/relationship, or anomalies. I have chosen a scatter plot to represent the data since it involves two continuous, numerical variables.
+
+```{r Exploratory figure}
 (culmenmass_scatter <- ggplot(
   data = penguins_clean, 
   aes(x = culmen_depth_mm, y = body_mass_g)) +
@@ -85,9 +94,11 @@ agg_png("figures/culmenmass_scatter.png",
         scaling = 1)
 print(culmenmass_scatter)
 dev.off()
+```
 
-#The exploratory figure created above shows that for all three penguin species observed, body mass appears to increase as culmen depth increases. It also shows that while a fairly similar relationship is seen between these characteristics for Adelie and Chinstrap penguins, Gentoo penguins have a typically higher body mass but shorter culmen depth than them. To avoid confusion, I will focus only on Adelie and Chinstrap penguins.
+The exploratory figure created above shows that for all three penguin species observed, body mass appears to increase as culmen depth increases. It also shows that while a fairly similar relationship is seen between these characteristics for Adelie and Chinstrap penguins, Gentoo penguins have a typically higher body mass but shorter culmen depth than them. To avoid confusion, I will focus only on Adelie and Chinstrap penguins.
 
+```{r subset, results='hide', fig.keep = "subset_scatter"}
 #Subsetting the data to exclude Gentoo penguins 
 culmenmass <- penguins_clean %>%
   select(culmen_depth_mm, body_mass_g, species) %>%
@@ -114,14 +125,15 @@ dev.off()
 ```
 
 ### Hypothesis
-#Null hypothesis: There is no significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins
-#Alternate hypothesis: There is a significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins
+Null hypothesis: There is no significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins\
+Alternate hypothesis: There is a significant correlation between body mass and culmen depth for Adelie and Chinstrap penguins
 
 ### Statistical Methods
 
+My alternate hypothesis posits a correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Therefore, calculating the Pearson correlation coefficient seems like an appropriate statistical method.
+
 ```{r Statistics}
 
-#My alternate hypothesis posits a correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Therefore, calculating the Pearson correlation coefficient seems like an appropriate statistical method.
 #Checking the assumption of normality for the continuous variables using Q-Q plots
 qqPlot(culmenmass_subset$culmen_depth_mm)
 qqPlot(culmenmass_subset$body_mass_g)
@@ -136,9 +148,9 @@ masscul_correlation
 
 ### Results & Discussion
 
+The Pearson correlation coefficient calculated was 0.5832418. This indicates a positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins of medium/high strength.The p-value returned by the test was much smaller than 0.05. There is sufficient evidence that the correlation coefficient is not equal to zero. The null hypothesis that there is no significant correlation between body mass and culmen depth can therefore be rejected. We can conclude that there is a significant, positive relationship between body mass and culmen depth for Adelie and Chinstrap penguins.
+
 ```{r Plotting Results}
-#The Pearson correlation coefficient calculated was 0.5832418. This indicates a positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins of medium/high strength.
-#The p-value returned by the test was much smaller than 0.05. There is sufficient evidence that the correlation coefficient is not equal to zero. The null hypothesis that there is no significant correlation between body mass and culmen depth can therefore be rejected. We can conclude that there is a significant, positive relationship between body mass and culmen depth for Adelie and Chinstrap penguins.
 
 #Creating a results figure
 (culmass_result <- ggscatter(culmenmass_subset, x = "culmen_depth_mm", y = "body_mass_g", 
@@ -158,7 +170,8 @@ dev.off()
 ```
 
 ### Conclusion
-#In conclusion, I have demonstrated that there is a significant, medium to strong positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Although the initial exploratory figure also appeared to show a relationship between these two variables for Gentoo penguins, the data for this species deviated from the other two and may have confused any statistical tests including all three species, so Gentoo penguins were excluded from the analysis. Calculating the Pearson's correlation coefficient and showing it was significantly different from zero indicated the positive and significant nature of the correlation. This result allowed me to reject the null hypothesis that there was no significant correlation between body mass and culmen length for Adelie and Chinstrap penguins. The final results figure produced demonstrates this conclusion, showing the results of the correlation test and the relationship between body mass and culmen length for these species.
+
+In conclusion, I have demonstrated that there is a significant, medium to strong positive correlation between body mass and culmen depth for Adelie and Chinstrap penguins. Although the initial exploratory figure also appeared to show a relationship between these two variables for Gentoo penguins, the data for this species deviated from the other two and may have confused any statistical tests including all three species, so Gentoo penguins were excluded from the analysis. Calculating the Pearson's correlation coefficient and showing it was significantly different from zero indicated the positive and significant nature of the correlation. This result allowed me to reject the null hypothesis that there was no significant correlation between body mass and culmen length for Adelie and Chinstrap penguins. The final results figure produced demonstrates this conclusion, showing the results of the correlation test and the relationship between body mass and culmen length for these species.
 ------------------------------------------------------------------------
 
 ## QUESTION 3: Open Science
@@ -167,13 +180,13 @@ dev.off()
 
 *Upload your RProject you created for **Question 2** and any files and subfolders used to GitHub. Do not include any identifiers such as your name. Make sure your GitHub repo is public.*
 
-*GitHub link:*
+*GitHub link:* https://github.com/eggyolk2000/Rep-Fig-Q2.git 
 
 *You will be marked on your repo organisation and readability.*
 
 ### b) Share your repo with a partner, download, and try to run their data pipeline.
 
-*Partner's GitHub link:*
+*Partner's GitHub link:*  
 
 *You **must** provide this so I can verify there is no plagiarism between you and your partner.*
 
