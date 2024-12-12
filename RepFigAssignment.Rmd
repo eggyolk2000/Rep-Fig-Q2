@@ -1,6 +1,6 @@
 ---
 title: "RepFigAssignment"
-output: html_document
+output: pdf_document 
 date: "2024-12-05"
 ---
 
